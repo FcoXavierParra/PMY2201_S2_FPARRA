@@ -17,4 +17,8 @@ kotlin {
 application { mainClass.set("MainKt") }
 
 // Permite leer desde consola con readLine() al ejecutar `gradle run`
-tasks.named<JavaExec>("run") { standardInput = System.`in` }
+tasks.named<JavaExec>("run") {
+    standardInput = System.`in`
+    // Acentos y símbolos en consola (Windows usa otra codificación por defecto)
+    jvmArgs("-Dfile.encoding=UTF-8", "-Dstdout.encoding=UTF-8", "-Dstderr.encoding=UTF-8")
+}
