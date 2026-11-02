@@ -57,4 +57,5 @@ Capturas de una ejecución en IntelliJ IDEA (JDK 21):
 ![Registro del cliente y pedido](evidencias/01_registro_y_pedido.png)
 ![Resumen del pedido](evidencias/02_resumen_pedido.png)
 ![Reporte del día](evidencias/03_reporte_del_dia.png)
-![Falta de ingredientes](evidencias/04_falta_ingredientes.png)
+![Falta de ingredientes y reposición negativa rechazada](evidencias/04_falta_ingredientes.png)
+![Reposición y nueva verificación](evidencias/05_reposicion.png)
