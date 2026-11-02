@@ -1,8 +1,9 @@
-import kotlin.math.roundToInt
+package utils
 
-// =====================================================================
-//  Paso 2: Funciones reutilizables y colecciones
-// =====================================================================
+import modelo.Inventario
+import modelo.Producto
+import modelo.Repartidor
+import kotlin.math.roundToInt
 
 const val TASA_IVA = 0.19
 const val TASA_DESCUENTO = 0.10
@@ -35,16 +36,6 @@ fun prepararLote(productos: List<Producto>, inventario: Inventario): Map<String,
     val faltantes = inventario.verificarDisponibilidad(necesarios)
     if (faltantes.isEmpty()) inventario.descontar(necesarios)
     return faltantes
-}
-
-fun mostrarPasosReabastecimiento(faltantes: Map<String, Int>) {
-    val detalle = faltantes.entries.joinToString(", ") { (ingrediente, cantidad) -> "$cantidad de $ingrediente" }
-    println("✘ Ingredientes insuficientes: ${faltantes.keys.joinToString(", ")}")
-    println("  Pasos para reabastecer:")
-    println("   1. Solicitar al proveedor al menos: $detalle.")
-    println("   2. Recibir la mercadería y revisar cantidad y fecha de vencimiento.")
-    println("   3. Registrar el ingreso en el inventario.")
-    println("   4. Volver a verificar el pedido.")
 }
 
 // Recorre los repartidores del más cercano al más lejano: primero uno disponible de la misma zona,

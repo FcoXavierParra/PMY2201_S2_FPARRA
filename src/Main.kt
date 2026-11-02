@@ -1,3 +1,24 @@
+import modelo.EstadoPedido
+import modelo.Inventario
+import modelo.Pedido
+import modelo.Producto
+import modelo.Repartidor
+import modelo.Usuario
+import utils.ANCHO
+import utils.MINIMO_PIZZAS_DESCUENTO
+import utils.TASA_DESCUENTO
+import utils.TASA_IVA
+import utils.ZONAS_CON_COBERTURA
+import utils.buscarRepartidorMasCercano
+import utils.filaMonto
+import utils.formatearPesos
+import utils.leerEntero
+import utils.leerTexto
+import utils.mostrarPasosReabastecimiento
+import utils.prepararLote
+import utils.registrarCliente
+import utils.seccion
+import utils.titulo
 import kotlin.math.roundToInt
 
 // =====================================================================
@@ -6,8 +27,6 @@ import kotlin.math.roundToInt
 //  Flujo: menú → registro de cliente → pedido → verificación de stock →
 //  repartidor → notificación → resumen → reporte del día
 // =====================================================================
-
-const val ANCHO = 52
 
 fun main() {
     // -----------------------------------------------------------------
@@ -47,7 +66,7 @@ fun main() {
         ),
         Pedido(
             registrarCliente("Pedro Silva", "987651234", "pedro.silva@mail.com", "San Diego 340", "Centro"),
-            listOf(pepperoni, pepperoni, pepperoni, pepperoni, margarita)
+            listOf(pepperoni, pepperoni, pepperoni, pepperoni, margarita), estadoInicial = EstadoPedido.LISTO
         ).also { repartidores[2].tomarPedido(it) },   // Valentina sale con este pedido
         Pedido(
             registrarCliente("Sofía Vera", "998877665", "sofia.vera@mail.com", "Gran Avenida 4500", "Sur"),
@@ -125,10 +144,12 @@ fun main() {
             pedidoConfirmado = true
             println("✔ Ingredientes descontados del inventario.")
             pedido.cambiarEstado(EstadoPedido.LISTO)
+            println("🔄 Pedido #${pedido.id}: ${pedido.ultimoCambio()}")
 
             buscarRepartidorMasCercano(repartidores, cliente.zona)?.let { repartidor ->
                 repartidor.tomarPedido(pedido)
                 println("🛵 Repartidor asignado: ${repartidor.nombre} (zona ${repartidor.zona}, ${repartidor.distanciaKm} km)")
+                println("🔄 Pedido #${pedido.id}: ${pedido.ultimoCambio()}")
             } ?: println("⚠ No hay repartidores disponibles. El pedido queda listo para despacho.")
 
             // let: la notificación solo se envía si el cliente tiene un correo válido
@@ -172,7 +193,7 @@ fun main() {
 }
 
 // ---------------------------------------------------------------------
-// Paso 5: resumen de un pedido con plantillas de strings
+// Resumen de un pedido con plantillas de strings
 // ---------------------------------------------------------------------
 fun imprimirResumen(pedido: Pedido) {
     val totales = pedido.calcularTotal()
@@ -201,14 +222,15 @@ fun imprimirResumen(pedido: Pedido) {
     println(filaMonto("IVA (${(TASA_IVA * 100).roundToInt()}%):", formatearPesos(totales.impuesto)))
     println(filaMonto("TOTAL:", formatearPesos(totales.total)))
     println("-".repeat(ANCHO))
-    println("  Estado:     ${pedido.estado.etiqueta}")
-    println("  Repartidor: ${pedido.repartidor?.let { "${it.nombre} (zona ${it.zona})" } ?: "Sin asignar"}")
-    println("  Notas:      ${pedido.notas ?: "Sin notas"}")
+    println("  Estado:      ${pedido.estado.etiqueta}")
+    println("  Seguimiento: ${pedido.seguimiento()}")
+    println("  Repartidor:  ${pedido.repartidor?.let { "${it.nombre} (zona ${it.zona})" } ?: "Sin asignar"}")
+    println("  Notas:       ${pedido.notas ?: "Sin notas"}")
     println("=".repeat(ANCHO))
 }
 
 // ---------------------------------------------------------------------
-// Paso 1: reporte del día recorriendo el arreglo con for y agrupando con filter
+// Reporte del día: recorre el arreglo con for y agrupa con filter
 // ---------------------------------------------------------------------
 fun imprimirReporteDelDia(pedidos: Array<Pedido>) {
     seccion("REPORTE DE PEDIDOS DEL DÍA")
@@ -224,16 +246,4 @@ fun imprimirReporteDelDia(pedidos: Array<Pedido>) {
     println("Completados (${completados.size}): ${completados.joinToString { "#${it.id}" }}")
     println("Pendientes  (${pendientes.size}): ${pendientes.joinToString { "#${it.id} ${it.estado.etiqueta}" }}")
     println("Venta del día: ${formatearPesos(pedidos.sumOf { it.calcularTotal().total })}")
-}
-
-fun filaMonto(etiqueta: String, monto: String): String = "  ${etiqueta.padEnd(38)}${monto.padStart(12)}"
-
-fun titulo(texto: String) {
-    println("=".repeat(ANCHO))
-    println(texto.padStart((ANCHO + texto.length) / 2))
-    println("=".repeat(ANCHO))
-}
-
-fun seccion(texto: String) {
-    println("\n--- $texto ---")
 }

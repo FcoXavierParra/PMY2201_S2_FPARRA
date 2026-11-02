@@ -13,12 +13,22 @@ Requiere **JDK 17 o superior**.
 
 ## Estructura
 
-| Archivo | Contenido |
-|---|---|
-| [`src/Main.kt`](src/Main.kt) | Flujo principal, resumen del pedido y reporte del día |
-| [`src/Modelos.kt`](src/Modelos.kt) | Clases `Usuario`, `Cliente`, `Repartidor`, `Producto`, `Pedido`, `Inventario` y el enum `EstadoPedido` |
-| [`src/Operaciones.kt`](src/Operaciones.kt) | Funciones de cálculo del total, ingredientes por lote, reabastecimiento y asignación de repartidor |
-| [`src/Utilidades.kt`](src/Utilidades.kt) | Validación y formato de strings, registro de cliente y lectura segura desde consola |
+```
+src/
+ ├── Main.kt              Coordina el flujo, el resumen del pedido y el reporte del día
+ ├── modelo/
+ │    ├── Usuario.kt       Clase base abierta: nombre y contacto
+ │    ├── Cliente.kt       Hereda de Usuario: dirección, zona y correo para notificaciones
+ │    ├── Repartidor.kt    Hereda de Usuario: zona, distancia, tomarPedido() y entregarPedido()
+ │    ├── Producto.kt      Pizza con precio, ingredientes y detallarProducto()
+ │    ├── Pedido.kt        Cliente, productos, estado con historial, calcularTotal() y cambiarEstado()
+ │    ├── EstadoPedido.kt  Estados y el orden en que pueden avanzar
+ │    └── Inventario.kt    Map de ingredientes: verificar, descontar y reponer
+ └── utils/
+      ├── Calculos.kt      Total con descuento e IVA, ingredientes por lote y repartidor más cercano
+      ├── Validaciones.kt  Validación y formato de teléfono, correo, nombre y zona; registro de cliente
+      └── Consola.kt       Lectura segura de datos y formato de salida
+```
 
 ## Cumplimiento de la pauta
 
@@ -27,12 +37,13 @@ Requiere **JDK 17 o superior**.
 | **Flujos de decisión, arreglos y strings** | `when` en `Inventario.verificarDisponibilidad()` clasifica cada ingrediente como OK, INSUFICIENTE o AGOTADO, y `mostrarPasosReabastecimiento()` detalla cómo reponer. Los pedidos del día se guardan en un `Array<Pedido>`; `imprimirReporteDelDia()` los recorre con `for` y los agrupa en completados y pendientes con `filter`. `validarTelefono()` y `validarCorreo()` validan los datos y, si son incorrectos, usan `(000) 000-0000` y `correo@invalido.com`. `formatearNombre()` normaliza mayúsculas y espacios, y `formatearPesos()` agrega separadores de miles. |
 | **Funciones y colecciones** | `calcularTotales()` aplica el 10 % de descuento a pedidos de más de 3 pizzas y el IVA del 19 %. `prepararLote()` suma los ingredientes de las pizzas con `calcularIngredientesLote()`, verifica el stock y lo descuenta. El inventario es un `Map` (ingrediente → cantidad), el menú y los repartidores son `listOf`, y las zonas con cobertura un `setOf`. `buscarRepartidorMasCercano()` ordena por distancia y usa `find`. |
 | **Clases y métodos** | `Producto.detallarProducto()`. `Pedido` tiene `calcularTotal()`, `cambiarEstado()`, `asignarRepartidor()` y agrupa los productos repetidos con `groupingBy`. Herencia: `open class Usuario` → `Cliente` y `Repartidor`, con `describir()` sobrescrito (polimorfismo en "Usuarios del sistema") y `Repartidor.entregarPedido()`. Encapsulamiento con `private set` en el estado y el repartidor del pedido, y con el `Map` privado de `Inventario`. |
-| **try-catch y operadores seguros** | `leerEntero()` usa `try-catch` para entradas no numéricas, negativas o fuera de rango, y vuelve a preguntar. Un pedido sin productos lanza "Costo de pedido no válido" y se informa sin detener el programa. `Inventario.reponer()` rechaza cantidades negativas y `descontar()` impide que el stock quede negativo. `?.` y `?:` en las notas del pedido ("Sin notas"), el repartidor ("Sin asignar") y los datos ingresados. `let` envía la notificación solo si el cliente tiene un correo válido. |
-| **Resumen con plantillas de strings** | `imprimirResumen()` muestra el cliente (nombre, teléfono y correo), los productos (nombre, precio, cantidad y monto), el subtotal, el descuento, el IVA, el total y el estado, usando `"$variable"` y `"${expresión}"`. |
-| **Código limpio** | Lógica separada en cuatro archivos por responsabilidad, nombres descriptivos en español y constantes para las tasas y los valores por defecto. |
+| **try-catch y operadores seguros** | `leerEntero()` usa `try-catch` para entradas no numéricas, negativas o fuera de rango, y vuelve a preguntar hasta recibir un valor válido. Un pedido sin productos lanza "Costo de pedido no válido" y se informa sin detener el programa. `Inventario.reponer()` rechaza cantidades negativas, `descontar()` impide que el stock quede negativo y `cambiarEstado()` rechaza saltos de estado. `?.` y `?:` en las notas del pedido ("Sin notas"), el repartidor ("Sin asignar") y los datos ingresados con `readlnOrNull()`. `let` envía la notificación solo si el cliente tiene un correo válido. |
+| **Resumen con plantillas de strings** | `imprimirResumen()` muestra el cliente (nombre, teléfono y correo), los productos (nombre, precio, cantidad y monto), el subtotal, el descuento, el IVA, el total, el estado y su seguimiento, usando `"$variable"` y `"${expresión}"`. |
+| **Código limpio** | Paquetes `modelo` (entidades) y `utils` (cálculos, validaciones y consola), un archivo por clase, `Main.kt` dedicado a coordinar el flujo, nombres descriptivos en español y constantes para las tasas y los valores por defecto. |
 
 **Decisiones de diseño**
-- **Estado "Entregado":** el enunciado pide agrupar pedidos completados y pendientes, así que se agregó este estado a los tres pedidos (En preparación, Listo, En camino). Lo asigna `Repartidor.entregarPedido()`.
+- **Estados del pedido:** avanzan solo en orden, En preparación → Listo → En camino → Entregado. `EstadoPedido.siguiente()` define el orden y `Pedido.cambiarEstado()` lanza una excepción si se intenta saltar un estado. Cada cambio se muestra en pantalla, y el resumen incluye el seguimiento completo.
+- **Estado "Entregado":** se agregó a los tres estados del enunciado porque el reporte debe agrupar los pedidos completados y pendientes. Lo asigna `Repartidor.entregarPedido()`.
 - **Cálculo del total:** el descuento se aplica sobre el subtotal y el IVA sobre el monto con descuento.
 - **Pedidos anteriores:** el programa parte con cuatro pedidos ya registrados en el día, para que el reporte tenga datos de todos los estados.
 
@@ -42,7 +53,7 @@ Inventario inicial: Masa 20, Salsa de tomate 20, Queso 15, Pepperoni 8, Jamón 4
 
 | Caso | Entrada | Resultado |
 |---|---|---|
-| Pedido con descuento | `ana   PÉREZ`, `+56 9 8765 4321`, `Ana@Mail.com`, zona `sur`, 4 Pepperoni | Nombre "Ana Pérez", correo en minúsculas. Subtotal $35.960, descuento $3.596, IVA $6.149, **total $38.513**. Repartidora Andrea (zona Sur). Notificación enviada. |
+| Pedido con descuento | `ana   PÉREZ`, `+56 9 8765 4321`, `Ana@Mail.com`, zona `sur`, 4 Pepperoni | Nombre "Ana Pérez", correo en minúsculas. Subtotal $35.960, descuento $3.596, IVA $6.149, **total $38.513**. Seguimiento En preparación → Listo → En camino, con la repartidora Andrea (zona Sur). Notificación enviada. |
 | Datos inválidos | Nombre y dirección vacíos, teléfono `12ab`, correo `correo@`, zona `Marte`; opciones `x`, `-1`, `9`; cantidad `0` | Avisos y valores por defecto. Cada número inválido muestra su mensaje y vuelve a preguntar. Sin notificación por correo inválido. Zona Centro: Valentina está en ruta, así que se asigna la disponible más cercana (Andrea, 0,8 km). |
 | Ingrediente agotado | 1 Vegetariana; reposición `-5` y luego `4` | Champiñones AGOTADO con pasos de reabastecimiento. `-5` se rechaza. Con 4 unidades, la nueva verificación aprueba el pedido. |
 | Ingrediente insuficiente | 5 Pepperoni; reposición `0` | Pepperoni INSUFICIENTE (necesita 10, hay 8). El pedido se rechaza y el inventario no cambia. |
@@ -55,7 +66,7 @@ Inventario inicial: Masa 20, Salsa de tomate 20, Queso 15, Pepperoni 8, Jamón 4
 Capturas de una ejecución en IntelliJ IDEA (JDK 21):
 
 ![Registro del cliente y pedido](evidencias/01_registro_y_pedido.png)
-![Resumen del pedido](evidencias/02_resumen_pedido.png)
-![Reporte del día](evidencias/03_reporte_del_dia.png)
+![Resumen del pedido y seguimiento de estados](evidencias/02_resumen_pedido.png)
+![Entregas, usuarios y reporte del día](evidencias/03_reporte_del_dia.png)
 ![Falta de ingredientes y reposición negativa rechazada](evidencias/04_falta_ingredientes.png)
-![Reposición y nueva verificación](evidencias/05_reposicion.png)
+![Reposición, nueva verificación y resumen](evidencias/05_reposicion.png)

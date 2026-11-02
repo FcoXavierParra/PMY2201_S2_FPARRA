@@ -1,7 +1,6 @@
-// =====================================================================
-//  Paso 1 (strings) y Paso 4 (errores y nulls): validación, formato y
-//  lectura segura desde consola
-// =====================================================================
+package utils
+
+import modelo.Cliente
 
 const val TELEFONO_POR_DEFECTO = "(000) 000-0000"
 const val CORREO_POR_DEFECTO = "correo@invalido.com"
@@ -54,34 +53,4 @@ fun registrarCliente(nombre: String?, telefono: String?, correo: String?, direcc
         direccion = direccion?.trim()?.ifEmpty { null } ?: "Sin dirección",
         zona = zonaValidada
     )
-}
-
-// 38513 -> "$38.513"
-fun formatearPesos(monto: Int): String =
-    "$" + monto.toString().reversed().chunked(3).joinToString(".").reversed()
-
-// ---------------------------------------------------------------------
-// Entrada por consola
-// ---------------------------------------------------------------------
-fun leerTexto(mensaje: String): String? {
-    print(mensaje)
-    return readLine()?.trim()?.takeIf { it.isNotEmpty() }
-}
-
-// Repite la pregunta hasta recibir un entero dentro del rango. Sin más entrada (EOF) devuelve valorPorDefecto
-fun leerEntero(mensaje: String, rango: IntRange, valorPorDefecto: Int): Int {
-    while (true) {
-        print(mensaje)
-        val entrada = readLine() ?: return valorPorDefecto
-        try {
-            val numero = entrada.trim().toInt()
-            if (numero < 0) throw IllegalArgumentException("El valor no puede ser negativo ($numero).")
-            if (numero !in rango) throw IllegalArgumentException("Ingrese un valor entre ${rango.first} y ${rango.last}.")
-            return numero
-        } catch (e: NumberFormatException) {
-            println("  ⚠ \"$entrada\" no es un número válido. Intente nuevamente.")
-        } catch (e: IllegalArgumentException) {
-            println("  ⚠ ${e.message}")
-        }
-    }
 }
